@@ -1,111 +1,78 @@
 use std::io;
-//use regex::Regex;
 use std::collections::HashMap;
 
-fn insert_at_predicate<T, P>(before: &HashMap<i32, Vec<i32>>, vec: &mut Vec<T>, predicate: P, value: T)
+// not my code (but modified)
+fn insert_at_predicate<T, P>(vec: &mut Vec<T>, predicate: P, value: T)
 where
-    P: Fn(&HashMap<i32, Vec<i32>>, &T, &T) -> bool,
+    P: Fn(&T, &T) -> bool,
 {
-    if let Some(index) = vec.iter().position(|element| predicate(before, element, &value)) {
+    if let Some(index) = vec.iter().position(|element| predicate(element, &value)) {
         vec.insert(index, value);
     } else {
-        // Handle case where predicate doesn't match any element
-        // For example, insert at the end:
+        // Where predicate doesn't match any element, insert at the end:
         vec.push(value); 
     }
 }
 
 fn main() {
     let stdin = io::stdin();
-    let lines = stdin.lines();
+    let mut lines = stdin.lines();
+
+    let mut before_lists: HashMap<i32, Vec<i32>> = HashMap::new();
+
+    // non-idiomatic approach to reading all the input
+    // process the top section of the input until we reach an empty line
+    while let Some(Ok(line)) = lines.next() {
+        //println!("{:?}", line);
+
+        // empty line found, bail out
+        if line.len() == 0 { break };
+
+        let pages: Vec<i32> = line.split("|").map(|x| x.parse::<i32>().unwrap()).collect();
+        //println!("{} {}", pages[0], pages[1]);
+        
+        before_lists
+            .entry(pages[0]) // find the vector of pages after this page
+            .or_insert(Vec::new())  // or make a new vector 
+            .push(pages[1]);                              // add the new page
+    }
+
+    // classic rust moment, I can't declare this closure _before_ I've built the before_list as that runs afoul of the borrow checker
+    let page_appears_in_before_list = |page_that_is_before: &i32, page_that_is_after: &i32|  {
+        return before_lists.get(page_that_is_before)
+            .and_then(|list| Some(list.contains(page_that_is_after)))
+            .unwrap_or(false);
+
+        // I think I like this style better, so leaving it here for reference
+        /*return if let Some(list) = before.get(element) {
+            list.contains(new_value)
+        } else {
+            false
+        };*/
+    };
 
     let mut total = 0;
 
-    let mut firstSection = true;
+    // process the bottom section of the input, and calculate the total as we go
+    while let Some(Ok(line)) = lines.next() {
+        let pages: Vec<i32> = line.split(",").map(|x| x.parse::<i32>().unwrap()).collect();      
 
-    let mut before: HashMap<i32, Vec<i32>> = HashMap::new();
+        // loop through all pages in the list (except the last as it is correctly ordered if we get that far)
+        let is_correctly_ordered = pages.iter().take(pages.len() -1).enumerate().all(|(i, page_that_is_before)| {
+            // check that all pages following the current page appear in the before list
+            pages.iter().skip(i + 1).all(|page_that_is_after| page_appears_in_before_list(page_that_is_before, page_that_is_after))
+        });
 
-    // non-idiomatic approach to reading all the input
-    for line in lines {
-        let line = line.unwrap();
-        //println!("{:?}", line);
+        // if not correctly ordered, add the pages one at a time in their correct ordered positions
+        if !is_correctly_ordered {
+            let mut ordered:Vec<i32> = Vec::new();
+            for page in pages {
+                insert_at_predicate(&mut ordered, |x, y| { !page_appears_in_before_list(x, y)}, page);
+            }
+            //println!("{ordered:?}");
 
-        if line.len() == 0 
-        {
-            firstSection = false;
-            continue;
+            total += ordered[ordered.len() / 2];
         }
-
-        if firstSection {
-            let parts: Vec<i32> = line.split("|").map(|x| x.parse::<i32>().unwrap()).collect();
-
-            println!("{} {}", parts[0], parts[1]);
-            before.entry(parts[0]).or_insert(Vec::new()).push(parts[1]);
-            /*if before.contains_key(&parts[0]) {
-                before.get(&parts[0]).unwrap().push(parts[1]);
-            } else {
-                before.insert(parts[0], Vec::new());
-            }*/
-        } else {
-            let parts: Vec<i32> = line.split(",").map(|x| x.parse::<i32>().unwrap()).collect();
-
-
-            fn pred(before: &HashMap<i32, Vec<i32>>, element: &i32, new_value: &i32) -> bool {
-                match before.get(element) {
-                    Some(list) => {
-                        if !list.contains(new_value) {
-                            //println!("NOT {} before {}", parts[i], parts[j]);
-                            return false;
-                        } else {
-                            //println!("{} before {}", parts[i], parts[j]);
-                            return true;
-                        }
-                    },
-                    None => {
-                        //println!("NO MATCH");
-                        return false;
-                    }
-                } 
-            }
-
-
-
-            let mut success = true;
-            for i in 0..parts.len()-1 {
-                for j in i+1..parts.len() {
-                    match before.get(&parts[i]) {
-                        Some(list) => {
-                            if !list.contains(&parts[j]) {
-                                success = false;
-                                println!("NOT {} before {}", parts[i], parts[j]);
-                            } else {
-                                println!("{} before {}", parts[i], parts[j]);
-                            }
-                        },
-                        None => {
-                            success = false;
-                            println!("NO MATCH");
-                        }
-                    } 
-                }
-            }
-
-            if success {
-                //total += parts[parts.len() / 2];
-                println!("woo!");
-            } else {
-                let mut ordered:Vec<i32> = Vec::new();
-                for page in parts {
-                    insert_at_predicate(&before, &mut ordered, pred, page);
-                }
-                println!("{ordered:?}");
-
-                total += ordered[ordered.len() / 2];
-                println!("boo!");
-            }
-        }
-
-
     }
 
     println!("{}", total);
