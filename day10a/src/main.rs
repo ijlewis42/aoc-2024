@@ -1,14 +1,10 @@
 use std::io;
-//use std::collections::HashMap;
-//use strum::IntoEnumIterator;
-//use strum_macros::EnumIter;
-//use aoc::*; // baby's first crate
 
 fn main() {
     let stdin = io::stdin();
     let lines = stdin.lines();
 
-    let mut grid : Vec<Vec<i32>> = Vec::new();
+    let mut grid : Vec<Vec<Option<i32>>> = Vec::new();
 
     // non-idiomatic approach to reading all the input
     for line in lines {
@@ -16,69 +12,72 @@ fn main() {
 
         // add each line as a vector of chars
         grid.push(line.chars().map(|c| 
-            c.to_digit(10)
-            .and_then(|x| Some (x as i32))
-            .unwrap_or(-1i32)).collect());
+                c.to_digit(10)
+                .and_then(|x| Some (x as i32))
+            )
+            .collect());
     }
 
-    // word as a vector of chars
-    let word:Vec<char> = "XMAS".chars().collect();
-
     // size of grid
-    let height = grid.len();
-    let width = grid[0].len();
+    let height = grid.len() as i32;
+    let width = grid[0].len() as i32;
 
-    let mut total = 0;
-
-
-    let mut all_todo = Vec::new();
-    
+    // find all locations in grid that contain a 0 (i.e. are a trailhead)
+    let mut trailheads = Vec::new();  
     for j in 0..height {
         for i in 0..width {
-            if grid[j][i] == 0 {
-                all_todo.push((i, j));
+            if grid[j as usize][i as usize] == Some(0) {
+                trailheads.push((i, j));
             }
         }
     }
 
-    while all_todo.len() > 0 {
+    let mut total = 0;
+
+    for trailhead in trailheads {
         let mut todo = Vec::new();
         let mut visited = Vec::new();
 
-        todo.push(all_todo.pop().unwrap());
+        // search only from one trailhead at a time, so the locations visited don't interfere with each other
+        todo.push(trailhead);
 
-        while todo.len() > 0 {
-            if let Some((x, y)) = todo.pop() {
-                let value = grid[y][x];
-    
-                if visited.contains(&(x, y)) { continue; }
-                visited.push((x, y));
-    
-                if value == 9 {
-                    total += 1;
-                } else {
-                    if x > 0 && grid[y][x - 1] == value + 1 {
-                        todo.push((x - 1, y));
-                    }
-                    if x < width - 1 && grid[y][x + 1] == value + 1 {
-                        todo.push((x + 1, y));
-                    }
-                    if y > 0 && grid[y - 1][x] == value + 1 {
-                        todo.push((x, y - 1));
-                    }
-                    if y < height - 1 && grid[y + 1][x] == value + 1 {
-                        todo.push((x, y + 1));
-                    }
+        // keep looping until no more locations to visit
+        while !todo.is_empty() {
+            let (x, y) = todo.pop().unwrap();
+
+            // if location already visited, bail out, otherwise remember it
+            if visited.contains(&(x, y)) { continue; }
+            visited.push((x, y));
+
+            // get the value at the current location
+            let value = grid[y as usize][x as usize].unwrap();
+
+            // if the value is 9, it can't be any higher, so count it as a summit
+            if value == 9 {
+                total += 1;
+            } else {
+                // search in the four cardinal directions
+                for (dx, dy) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
+                    // calculate new location
+                    let (nx, ny) = (x + dx, y + dy);
+
+                    // check that new location is within grid bounds and that value there is correct 
+                    if nx >= 0 && nx < width && ny >= 0 && ny < height && grid[ny as usize][nx as usize] == Some(value + 1) {
+                        todo.push((nx, ny));
+                    } 
                 }
             }
         }
     }
 
     // output the final grid
-    for line in grid.clone() {
-        println!("{}", line.iter().map(|d| d.to_string()).collect::<String>())
+    /*for line in grid.clone() {
+        println!("{}", line.iter().map(|d| match d {
+            Some(d) => d.to_string(),
+            None => ".".to_string()
+        }).collect::<String>());
     }
-    println!("");
+    println!("");*/
 
     println!("{total}");
 
