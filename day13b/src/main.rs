@@ -1,4 +1,5 @@
 use std::io;
+use regex::Regex;
 
 fn main() {
     let stdin = io::stdin();
@@ -11,21 +12,22 @@ fn main() {
 
     // non-idiomatic approach to reading all the input
     for chunk in chunks {
-        // deal with the nastiness of the line -- this would probably have been better to have been a regex that just matched the two numbers on each line
-        fn grab_numbers(line : String, starting_chars_to_skip : usize, deliminator: &str) -> (i128, i128) {
-            let button_line = line;
-            let button_line = &button_line[starting_chars_to_skip..button_line.len()];
-            let numbers = button_line.split(deliminator);
-            let numbers = numbers.map(|x|x.parse::<i128>().unwrap());
-            let numbers = numbers.collect::<Vec<_>>();
+        // deal with the each line -- regex approach (conceptually I could've read the _whole_ file with one regex, and then pulled numbers out in chunks of 6)
+        fn grab_numbers(line : &String) -> (i128, i128) {           
+            // match numbers of any length within our line (using a regex)
+            let numbers = Regex::new(r"\d+").unwrap().captures_iter(&line)
+                // convert them all to i128s
+                .map(|c| c[0].parse::<i128>().unwrap())
+                // collect them into a vector for easy retrieval
+                .collect::<Vec<_>>();
 
             return (numbers[0], numbers[1]);
         }
 
         // read the input from the chunk
-        let (x1, y1) = grab_numbers(chunk[0].clone(), 12, ", Y+");
-        let (x2, y2) = grab_numbers(chunk[1].clone(), 12, ", Y+");
-        let (x_result, y_result) = grab_numbers(chunk[2].clone(), 9, ", Y=");
+        let (x1, y1) = grab_numbers(&chunk[0]);
+        let (x2, y2) = grab_numbers(&chunk[1]);
+        let (x_result, y_result) = grab_numbers(&chunk[2]);
         let x_result = x_result + 10000000000000i128;
         let y_result = y_result + 10000000000000i128;
 
