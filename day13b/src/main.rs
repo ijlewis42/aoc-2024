@@ -5,29 +5,29 @@ fn main() {
     let stdin = io::stdin();
     let lines = stdin.lines();
 
-    let mut total = 0;
+    // unwrap all the lines
+    let lines = lines.map(|line| line.unwrap());
 
-    let binding = lines.map(|line| line.unwrap()).collect::<Vec<_>>();
-    let chunks = binding.chunks(4);
+    // concat all the strings
+    let all = lines.collect::<String>();
 
-    // non-idiomatic approach to reading all the input
-    for chunk in chunks {
-        // deal with the each line -- regex approach (conceptually I could've read the _whole_ file with one regex, and then pulled numbers out in chunks of 6)
-        fn grab_numbers(line : &String) -> (i128, i128) {           
-            // match numbers of any length within our line (using a regex)
-            let numbers = Regex::new(r"\d+").unwrap().captures_iter(&line)
+    // extract all the numbers via a regex
+    let all_numbers = Regex::new(r"\d+").unwrap().captures_iter(&all)
                 // convert them all to i128s
                 .map(|c| c[0].parse::<i128>().unwrap())
                 // collect them into a vector for easy retrieval
                 .collect::<Vec<_>>();
 
-            return (numbers[0], numbers[1]);
-        }
+    //println!("{all_numbers:?}");
 
-        // read the input from the chunk
-        let (x1, y1) = grab_numbers(&chunk[0]);
-        let (x2, y2) = grab_numbers(&chunk[1]);
-        let (x_result, y_result) = grab_numbers(&chunk[2]);
+    let mut total = 0;
+
+    // group the numbers into groups of 6 elements
+    let chunks = all_numbers.chunks(6);
+
+    for chunk in chunks {
+        // read the numbers from the chunk
+        let [x1, y1, x2, y2, x_result, y_result] = chunk else { panic!("not the right amount of numbers in input") };
         let x_result = x_result + 10000000000000i128;
         let y_result = y_result + 10000000000000i128;
 
