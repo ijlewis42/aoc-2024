@@ -11,49 +11,48 @@ fn main() {
 
     // non-idiomatic approach to reading all the input
     for chunk in chunks {
-        let button_line = chunk[0].clone();
-        let button_line = &button_line[12..button_line.len()];
-        let numbers = button_line.split(", Y+");
-        let numbers = numbers.map(|x|x.parse::<i128>().unwrap());
-        let numbers = numbers.collect::<Vec<_>>();
-        let x1 = numbers[0];
-        let y1 = numbers[1];
+        // deal with the nastiness of the line -- this would probably have been better to have been a regex that just matched the two numbers on each line
+        fn grab_numbers(line : String, starting_chars_to_skip : usize, deliminator: &str) -> (i128, i128) {
+            let button_line = line;
+            let button_line = &button_line[starting_chars_to_skip..button_line.len()];
+            let numbers = button_line.split(deliminator);
+            let numbers = numbers.map(|x|x.parse::<i128>().unwrap());
+            let numbers = numbers.collect::<Vec<_>>();
 
-        let button_line = chunk[1].clone();
-        let button_line = &button_line[12..button_line.len()];
-        let numbers = button_line.split(", Y+");
-        let numbers = numbers.map(|x|x.parse::<i128>().unwrap());
-        let numbers = numbers.collect::<Vec<_>>();
-        let x2 = numbers[0];
-        let y2 = numbers[1];
+            return (numbers[0], numbers[1]);
+        }
 
-        let button_line = chunk[2].clone();
-        let button_line = &button_line[9..button_line.len()];
-        let numbers = button_line.split(", Y=");
-        let numbers = numbers.map(|x|x.parse::<i128>().unwrap());
-        let numbers = numbers.collect::<Vec<_>>();
-        let x_result = numbers[0] + 10000000000000i128;
-        let y_result = numbers[1] + 10000000000000i128;
+        // read the input from the chunk
+        let (x1, y1) = grab_numbers(chunk[0].clone(), 12, ", Y+");
+        let (x2, y2) = grab_numbers(chunk[1].clone(), 12, ", Y+");
+        let (x_result, y_result) = grab_numbers(chunk[2].clone(), 9, ", Y=");
+        let x_result = x_result + 10000000000000i128;
+        let y_result = y_result + 10000000000000i128;
 
-        println!("{x1} {y1}");
-        println!("{x2} {y2}");
-        println!("{x_result} {y_result}\n");
+        //println!("{x1} {y1}");
+        //println!("{x2} {y2}");
+        //println!("{x_result} {y_result}\n");
 
+        // code for solving simultaneous equations
         let b_numerator = x_result * y1 - y_result * x1;
         let b_denominator = y1 * x2 - x1 * y2;
 
-        println!("b = {b_numerator}/{b_denominator}");
+        //println!("b = {b_numerator}/{b_denominator}");
 
+        // only a valid solution we care about if this divides evenly
         if b_numerator % b_denominator == 0 {
             let b = b_numerator / b_denominator;
             let a_numerator = x_result * y1 - y1 * x2 * b; 
             let a_denominator = y1 * x1;
 
-            println!("a = {a_numerator}/{a_denominator}");
+            //println!("a = {a_numerator}/{a_denominator}");
 
+            // only a valid solution we care about if this divides evenly
             if a_numerator % a_denominator == 0 {
                 let a = a_numerator / a_denominator;
-                println!("success {a} {b}");
+                //println!("success {a} {b}");
+                
+                // add value of this solution to total
                 total += a * 3 + b;
             }
         }
