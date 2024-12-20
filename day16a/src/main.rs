@@ -56,63 +56,64 @@ fn main() {
         }
     }
 
-    println!("{graph:?}");
+    //println!("{graph:?}");
 
+    let mut costs: HashMap<(usize, usize, bool), i128>  = HashMap::new();
+    costs.insert((start_pos.0, start_pos.1, true), 0);
 
-    let mut total = 0;
+    let mut done: HashMap<(usize, usize, bool), i128>  = HashMap::new();
 
-    let mut todo = Vec::new();
-    let mut costs: HashMap<(usize, usize), i128>  = HashMap::new();
+    // world's slowest djikstra
 
-    costs.insert(start_pos, 1);
+    //for _i in 0..10 {
+    loop {
+        let mut frontier = Vec::new();
+        for ((start, end), cost) in &graph {
+            //let (sx, sy, sdir) = start;
+            //let (ex, ey, edir) = end;
 
-    todo.push((start_pos, true));
-
-    while !todo.is_empty() {
-        let (pos, dir) = todo.pop().unwrap();
-        //let ((x, y), (odx, ody), cost_so_far) = todo.pop();
-        let (x, y) = pos;
-
-        if visited.contains(&(x, y)) {
-            //println!(" - already been here");
-            continue;
-        }
-
-        visited.push((x, y));
-        
-        let from_pos = ((x as i32 - odx) as usize, (y as i32 - ody) as usize);
-        let cost_to_here = costs.get(&from_pos).unwrap() + edge_cost;
-        if costs.contains_key(&pos) {
-            let previous_value = costs.get(&pos).unwrap();
-            costs.insert(pos, std::cmp::min(cost_to_here, *previous_value));
-        } else {
-            costs.insert(pos, cost_to_here);
-        }
-
-        for (dx, dy, direction) in [(-1, 0, true), (1, 0, true), (0, -1, false), (0, 1, false), (0, 0, false), (0, 0, true)] {
-            // calculate new location
-            let (nx, ny) = ((x as i32 + dx) as usize, (y as i32 + dy) as usize);
-
-            if let Some(cost) = graph.get(&((x, y, dir), (nx, ny, direction))) {
-                todo.push(((nx as usize, ny as usize), direction));
+            if costs.contains_key(&start) && !done.contains_key(&start) {
+                frontier.push((start, costs.get(&start).unwrap()));
             }
         }
+        frontier.sort_by(|(_, c1), (_, c2)| c2.cmp(&c1));
 
-        todo.sort_by(|((x, y), (dx, dy), edge_cost), ((x2, y2), (dx2, dy2), edge_cost2)| {
-            let from_pos1 = ((*x as i32 - *dx) as usize, (*y as i32 - *dy) as usize);
-            let cost1 = costs.get(&from_pos1).unwrap() + edge_cost;
-    
-            let from_pos2 = ((*x2 as i32 - *dx2) as usize, (*y2 as i32 - *dy2) as usize);
-            let cost2 = costs.get(&from_pos2).unwrap() + edge_cost2;
-    
-            return cost2.cmp(&cost1);
-        });
-        //println!("{todo:?}");
+        //println!("{:?}", frontier);
+
+        if frontier.is_empty() {
+            break;
+        }
+
+        let (node, cost) = frontier.pop().unwrap();
+        //let (sx, sy, sdir) = start;
+        //let (ex, ey, edir) = end;
+
+        for ((start, end), cost) in &graph {
+            //let (sx, sy, sdir) = start;
+            //let (ex, ey, edir) = end;
+
+            if start == node {
+                let new_cost = cost + costs.get(&start).unwrap();
+                if costs.contains_key(&end) {
+                    let old_cost = *costs.get(&end).unwrap();
+                    costs.insert(*end, std::cmp::min(old_cost, new_cost));
+                } else {
+                    costs.insert(*end, new_cost);
+                }
+            }
+        }        
+
+        done.insert(*node, *costs.get(node).unwrap());
+
+        //println!("{:?}", done);
     }
 
-    total = *costs.get(&end_pos).unwrap();
+    //let ((start, end), cost) = costs.get(&end_pos).unwrap();
+
+    let total = std::cmp::min(*costs.get(&(end_pos.0, end_pos.1, false)).unwrap(), *costs.get(&(end_pos.0, end_pos.1, true)).unwrap());
 
     println!("{total}");
 }
 
 // 134597 too high
+// 134588
