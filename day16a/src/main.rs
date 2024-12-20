@@ -7,7 +7,7 @@ fn main() {
     let lines = stdin.lines();
 
 
-    let mut grid : Vec<Vec<(char, i128)>> = Vec::new();
+    let mut grid : Vec<Vec<char>> = Vec::new();
     let mut start_pos = (0, 0);
     let mut end_pos = (0, 0);
     
@@ -25,61 +25,53 @@ fn main() {
             }
         }
 
-        //grid.push(line);
-        let line_with_costs = line.into_iter().map(|c| (c, 10000000000i128)).collect();
-        grid.push(line_with_costs);
+        grid.push(line);
+        //let line_with_costs = line.into_iter().map(|c| (c, 10000000000i128)).collect();
+        //grid.push(line_with_costs);
     }
 
     // size of grid
-    //let height = grid.len() as i32;
-    //let width = grid[0].len() as i32;
+    let height = grid.len() as i32;
+    let width = grid[0].len() as i32;
+
+    let mut graph = HashMap::new();
+
+    //[derive(Eq)]
+    //enum Direction { Horiz, Vert }
+
+    for y in 0..height {
+        for x in 0..width {
+            if grid[y as usize][x as usize] != '#' {
+                for (dx, dy, direction) in [(-1, 0, true), (1, 0, true), (0, -1, false), (0, 1, false)] {
+                    // calculate new location
+                    let (nx, ny) = ((x + dx) as usize, (y + dy) as usize);
+    
+                    if grid[ny][nx] != '#' {
+                        graph.insert(((x as usize, y as usize, direction), (nx, ny, direction)), 1);
+                        graph.insert(((x as usize, y as usize, true), (x as usize, y as usize, false)), 1000);
+                        graph.insert(((x as usize, y as usize, false), (x as usize, y as usize, true)), 1000);
+                    }
+                }    
+            }
+        }
+    }
+
+    println!("{graph:?}");
+
 
     let mut total = 0;
 
-    let mut visited = Vec::new();
-
     let mut todo = Vec::new();
-
     let mut costs: HashMap<(usize, usize), i128>  = HashMap::new();
-    costs.insert(start_pos, 0);
 
-    for (dx, dy) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
-        // calculate new location
-        let (nx, ny) = ((start_pos.0 as i32 + dx) as usize, (start_pos.1 as i32 + dy) as usize);
+    costs.insert(start_pos, 1);
 
-        let edge_cost = if dx == 1 && dy == 0 { 1 } else { 1000 };
-
-        todo.push(((nx as usize, ny as usize), (dx, dy), edge_cost));
-    }
-
-    todo.sort_by(|((x, y), (dx, dy), edge_cost), ((x2, y2), (dx2, dy2), edge_cost2)| {
-        let from_pos1 = ((*x as i32 - *dx) as usize, (*y as i32 - *dy) as usize);
-        let cost1 = costs.get(&from_pos1).unwrap() + edge_cost;
-
-        let from_pos2 = ((*x2 as i32 - *dx2) as usize, (*y2 as i32 - *dy2) as usize);
-        let cost2 = costs.get(&from_pos2).unwrap() + edge_cost2;
-
-        return cost1.cmp(&cost2);
-    });
+    todo.push((start_pos, true));
 
     while !todo.is_empty() {
-        let (pos, dir, edge_cost) = todo.pop().unwrap();
+        let (pos, dir) = todo.pop().unwrap();
         //let ((x, y), (odx, ody), cost_so_far) = todo.pop();
         let (x, y) = pos;
-        let (odx, ody) = dir;
-
-        //println!("{pos:?} {dir:?} {cost_so_far}");
-
-        let (cell, _cost) = grid[y][x];
-        if cell == '#' {
-            //println!(" - hit wall");
-            continue;
-        } else if cell == 'E' {
-            //println!(" - reached end");
-            //total = cost_so_far;
-            //println!("{total}");
-            //continue;
-        }
 
         if visited.contains(&(x, y)) {
             //println!(" - already been here");
@@ -97,13 +89,13 @@ fn main() {
             costs.insert(pos, cost_to_here);
         }
 
-        for (dx, dy) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
+        for (dx, dy, direction) in [(-1, 0, true), (1, 0, true), (0, -1, false), (0, 1, false), (0, 0, false), (0, 0, true)] {
             // calculate new location
             let (nx, ny) = ((x as i32 + dx) as usize, (y as i32 + dy) as usize);
 
-            let edge_cost = if dx == odx && dy == ody { 1 } else { 1001 };
-
-            todo.push(((nx as usize, ny as usize), (dx, dy), edge_cost));
+            if let Some(cost) = graph.get(&((x, y, dir), (nx, ny, direction))) {
+                todo.push(((nx as usize, ny as usize), direction));
+            }
         }
 
         todo.sort_by(|((x, y), (dx, dy), edge_cost), ((x2, y2), (dx2, dy2), edge_cost2)| {
