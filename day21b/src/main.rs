@@ -101,78 +101,60 @@ fn main() {
         };
 
         let search2 = | keypad: Vec<Vec<char>>, (sx, sy): (usize, usize), (ex, ey): (usize, usize), sequence_so_far: String | {
-            let mut ret = Vec::new();
-
-            /*if keypad[sy][sx] == '#' {
-                return ret;
-            }*/
-
             if keypad[sy][sx] == '<' && keypad[ey][ex] == '>' {
-                ret.push(">>");
-                return ret;
+                return ">>";
             }
             if keypad[sy][sx] == '>' && keypad[ey][ex] == '<' {
-                ret.push("<<");
-                return ret;
+                return "<<";
             }
 
             if keypad[sy][sx] == 'v' && keypad[ey][ex] == 'A' {
-                ret.push(">^");
-                return ret;
+                return ">^";
             }
             if keypad[sy][sx] == 'A' && keypad[ey][ex] == 'v' {
-                ret.push("v<");
-                return ret;
+                return "v<";
             }
 
             if keypad[sy][sx] == '^' && keypad[ey][ex] == '<' {
-                ret.push("v<");
-                return ret;
+                return "v<";
             }
             if keypad[sy][sx] == '<' && keypad[ey][ex] == '^' {
-                ret.push(">^");
-                return ret;
+                return ">^";
             }
 
             if keypad[sy][sx] == '^' && keypad[ey][ex] == '>' {
-                ret.push(">v");
-                return ret;
+                return ">v";
             }
             if keypad[sy][sx] == '>' && keypad[ey][ex] == '^' {
-                ret.push("^<");
-                return ret;
+                return "^<";
             }
 
 
             if keypad[sy][sx] == '<' && keypad[ey][ex] == 'A' {
-                ret.push(">>^");
-                //ret.push(((ex, ey), sequence_so_far.clone() + ">^>"));
-                return ret;
+                return ">>^";
             }
 
             if keypad[sy][sx] == 'A' && keypad[ey][ex] == '<' {
-                ret.push("v<<");
-                //ret.push(((ex, ey), sequence_so_far.clone() + "<v<"));
-                return ret;
+                return "v<<";
             }
 
             if ey == sy && ex == sx {
-                ret.push("");
+                return "";
             }
 
             if ey < sy && keypad[sy - 1][sx] != '#' {
-                ret.push("^");
+                return "^";
             } else if ey > sy && keypad[sy + 1][sx] != '#' {
-                ret.push("v");
+                return "v";
             }
 
             if ex < sx && keypad[sy][sx - 1] != '#' {
-                ret.push("<");
+                return "<";
             } else if ex > sx && keypad[sy][sx + 1] != '#' {
-                ret.push(">");
+                return ">";
             }
 
-            return ret;
+            return "";
         };
 
         let mut sequences_step1 = Vec::new();
@@ -249,16 +231,8 @@ fn main() {
                     while !todo.is_empty() {
                         let ((x, y), sequence_so_far) = todo.pop().unwrap();
         
-                        let more = search(keypad.clone(), (x, y), (ex, ey), sequence_so_far);
-                        for (pos, sequence) in more {
-                            if pos == end_pos {
-                                sequences.push((pos, sequence.clone() + "A"));
-                                //println!("{:?} {}", pos, sequence.clone() + "A");
-                            } else {
-                                //todo.push((pos, sequence));
-                                //println!("Didn't push: {:?} {:?} {}", pos, end_pos, sequence.clone());
-                            }
-                        }
+                        let more = search2(keypad.clone(), (x, y), (ex, ey), sequence_so_far.clone());
+                        sequences.push(((ex, ey), sequence_so_far.clone() + more + "A"));
                     }            
                 }
                 for sequence in sequences {
@@ -305,3 +279,73 @@ fn main() {
 // 32 -> 16
 // 768 -> 768
 // 116391936 -> 26738688
+
+
+// 129A
+// 0
+// BEFORE: 6
+// AFTER: 6 -- 14
+// 0
+// 1
+// 2
+// 3
+// 4
+// 5
+// 1
+// BEFORE: 6
+// AFTER: 2 -- 30
+// 0
+// 1
+// 2
+// BEFORE: 2
+// AFTER: 2 -- 74
+// 0
+// 1
+// 3
+// BEFORE: 2
+// AFTER: 2 -- 190
+// 0
+// 1
+// 4
+// BEFORE: 2
+// AFTER: 1 -- 478
+// 0
+// 5
+// BEFORE: 1
+// AFTER: 1 -- 1232
+// 0
+// 6
+// BEFORE: 1
+// AFTER: 1 -- 3158
+// 0
+// 7
+// BEFORE: 1
+// AFTER: 1 -- 8114
+// 0
+// 8
+// BEFORE: 1
+// AFTER: 1 -- 20832
+// 0
+// 9
+// BEFORE: 1
+// AFTER: 1 -- 53504
+// 0
+// 10
+// BEFORE: 1
+// AFTER: 1 -- 137398
+// 0
+// 11
+// BEFORE: 1
+// AFTER: 1 -- 352860
+// 0
+// 12
+// BEFORE: 1
+// AFTER: 1 -- 906178
+// 0
+// 13
+// BEFORE: 1
+// AFTER: 1 -- 2327176
+// 0
+// 14
+// BEFORE: 1
+// AFTER: 1 -- 5976448
