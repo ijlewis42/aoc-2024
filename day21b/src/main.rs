@@ -153,13 +153,13 @@ fn main() {
         let mut minimum_length = 1000000000000000000u64;
 
         for keypad_count in 0..26 {
-            print!("{keypad_count} ");
+            //print!("{keypad_count} ");
             io::stdout().flush();
-            println!("\nBEFORE: {}", sequences_step1.len());
+            //println!("\nBEFORE: {}", sequences_step1.len());
             let lengths = sequences_step1.iter().map(|(_pos, sequence, _histo)| sequence.len());
             let min_length = lengths.min().unwrap();
             sequences_step1.retain(|(_pos, x, _histo)| x.len() == min_length);
-            println!("AFTER: {} -- {}", sequences_step1.len(), sequences_step1[0].1.len());
+            //println!("AFTER: {} -- {}", sequences_step1.len(), sequences_step1[0].1.len());
 
             let keypad_old = vec!("#####", "##^A#", "#<v>#", "#####");
             let keypad = keypad_old.iter().map(|s| s.chars().collect::<Vec<char>>()).collect::<Vec<_>>();
@@ -169,7 +169,7 @@ fn main() {
     
             minimum_length = 1000000000000000000u64;
             for (iii, previous_sequence_data) in sequences_step1.iter().enumerate() {
-                println!("{iii}");
+                //println!("{iii}");
                 let (_start_pos, previous_sequence, previous_histo) = previous_sequence_data;
                 //let mut sequences = Vec::new();
                 //sequences.push((start_pos, "".to_string(), HashMap::new()));
@@ -190,7 +190,7 @@ fn main() {
                         let (x, y) = start_pos;
             
                         let more = search2(keypad.clone(), (x, y), (ex, ey), sequence_so_far.clone());
-                        sequence_so_far = sequence_so_far.clone() + &(more.to_string() + "A").repeat(*count as usize);
+                        //sequence_so_far = sequence_so_far.clone() + &(more.to_string() + "A").repeat(*count as usize);
 
                         *(histo.entry(more.to_string() + "A")
                             .or_insert(0u64))
@@ -211,13 +211,12 @@ fn main() {
 
                 sequences_step2.push((start_pos, sequence_so_far, histo));
             }    
-            sequences_step1 = sequences_step2;
+            sequences_step1 = sequences_step2.clone();
+
+            for sequence in &sequences_step2 {
+                println!("B {:?}", sequence);
+            }
         }
-
-
-        // for sequence in &sequences_step2 {
-        //     println!("B {:?}", sequence);
-        // }
 
         let mult = numbers_only.collect::<String>().parse::<u64>().unwrap();
         let lengths = sequences_step1.iter().map(|(_pos, _sequence, histo)| histo.values().sum::<u64>());
@@ -231,21 +230,9 @@ fn main() {
     println!("TOTAL: {total}");
 }
 
-// 029A: <vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A
-//       <vA<AA>>^AvAA<^A>Av<<A>>^AvA^A<vA>^Av<<A>^A>AAvA^Av<<A>A>^AAAvA<^A>A
-// 980A: <v<A>>^AAAvA^A<vA<AA>>^AvAA<^A>A<v<A>A>^AAAvA<^A>A<vA>^A<A>A
-//       v<<A>>^AAAvA^A<vA<AA>>^AvAA<^A>Av<<A>A>^AAAvA<^A>A<vA>^A<A>A
-// 179A: <v<A>>^A<vA<A>>^AAvAA<^A>A<v<A>>^AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A
-//       v<<A>>^A<vA<A>>^AAvAA<^A>Av<<A>>^AAvA^A<vA>^AA<A>Av<<A>A>^AAAvA<^A>A
-// 456A: <v<A>>^AA<vA<A>>^AAvAA<^A>A<vA>^A<A>A<vA>^A<A>A<v<A>A>^AAvA<^A>A
-//       v<<A>>^AA<vA<A>>^AAvAA<^A>A<vA>^A<A>A<vA>^A<A>Av<<A>A>^AAvA<^A>A
-// 379A: <v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A
-//       v<<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>Av<<A>A>^AAAvA<^A>A
+// 902078982798550 too high
+// 351261151537816 too high
 
-
-
-// 143536 too high
-// 136780 hooray
 
 
 // 3 -> 3

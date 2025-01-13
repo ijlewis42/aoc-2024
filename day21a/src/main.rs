@@ -1,5 +1,6 @@
 //use core::num;
 use std::io;
+use std::collections::HashSet;
 
 fn main() {
     let stdin = io::stdin();
@@ -20,183 +21,183 @@ fn main() {
 
         let numbers_only = line.chars().filter(|c|c.is_ascii_digit());
 
-        let keypad = vec!("#####", "#789#", "#456#", "#123#", "##0A#", "#####");
-        //let keypad = keypad.iter().map(|s| s.chars().collect::<Vec<char>>()).collect::<Vec<_>>();
-        let mut pos = (3, 4);
+        let keypad_old = vec!("#####", "#789#", "#456#", "#123#", "##0A#", "#####");
+        let keypad = keypad_old.iter().map(|s| s.chars().collect::<Vec<char>>()).collect::<Vec<_>>();
+        let start_pos = (3, 4);
 
-        /*let search = | keypad, (sx, sy), (ex, ey), sequence_so_far | {
+        let search = | keypad: Vec<Vec<char>>, (sx, sy): (usize, usize), (ex, ey): (usize, usize), sequence_so_far: String | {
             let mut ret = Vec::new();
 
             /*if keypad[sy][sx] == '#' {
                 return ret;
             }*/
 
+            if ey == sy && ex == sx {
+                ret.push(((sx, sy), sequence_so_far.clone()));
+            }
+
             if ey < sy && keypad[sy - 1][sx] != '#' {
-                ret.push(((sx, sy - 1), sequence_so_far + "^"));
+                ret.push(((sx, sy - 1), sequence_so_far.clone() + "^"));
             } else if ey > sy && keypad[sy + 1][sx] != '#' {
-                ret.push(((sx, sy + 1), sequence_so_far + "v"));
+                ret.push(((sx, sy + 1), sequence_so_far.clone() + "v"));
             }
 
             if ex < sx && keypad[sy][sx - 1] != '#' {
-                ret.push(((sx - 1, sy), sequence_so_far + "<"));
+                ret.push(((sx - 1, sy), sequence_so_far.clone() + "<"));
             } else if ex > sx && keypad[sy][sx + 1] != '#' {
-                ret.push(((sx + 1, sy), sequence_so_far + ">"));
+                ret.push(((sx + 1, sy), sequence_so_far.clone() + ">"));
             }
 
             return ret;
-        };*/
+        };
 
-        let mut sequence = String::new();
+        let mut sequences_step1 = Vec::new();
+        sequences_step1.push((start_pos, "".to_string()));
+
         for c in line.chars() {
             //println!("searching for {c}");
-            let dest = keypad.iter().enumerate().find_map(|(y, row)| row.find(c).and_then(|x| Some((x, y))));
-            let (dx, dy) = dest.unwrap();
+            let end_pos = keypad_old.iter().enumerate().find_map(|(y, row)| row.find(c).and_then(|x| Some((x, y)))).unwrap();
+            let (ex, ey) = end_pos;
             //println!("{dx} {dy}");
-            let (mut x, mut y) = pos;
+            //let (sx, sy) = start_pos;
 
-            if keypad[y].chars().collect::<Vec<char>>()[dx] == '#' {
-                while x != dx || y != dy {
-                    if y < dy && keypad[dy].chars().collect::<Vec<char>>()[x] != '#' {
-                        y += 1;
-                        sequence += "v";
-                    } else if y > dy && keypad[dy].chars().collect::<Vec<char>>()[x] != '#'{
-                        y -= 1;
-                        sequence += "^";
-                    } else if x > dx && keypad[y].chars().collect::<Vec<char>>()[dx] != '#' {
-                        x -= 1;
-                        sequence += "<";
-                    } else if x < dx && keypad[y].chars().collect::<Vec<char>>()[dx] != '#' {
-                        x += 1;
-                        sequence += ">";
+            let mut todo = Vec::new();
+            for sss in sequences_step1.clone() {
+                todo.push(sss);
+            }
+            sequences_step1.clear();
+
+            while !todo.is_empty() {
+                let ((x, y), sequence_so_far) = todo.pop().unwrap();
+
+                let more = search(keypad.clone(), (x, y), (ex, ey), sequence_so_far);
+                for (pos, sequence) in more {
+                    if pos == end_pos {
+                        sequences_step1.push((pos, sequence.clone() + "A"));
+                    } else {
+                        todo.push((pos, sequence));
                     }
                 }
-            } else {
-                while x != dx || y != dy {
-                    if x > dx && keypad[y].chars().collect::<Vec<char>>()[dx] != '#' {
-                        x -= 1;
-                        sequence += "<";
-                    } else if x < dx && keypad[y].chars().collect::<Vec<char>>()[dx] != '#' {
-                        x += 1;
-                        sequence += ">";
-                    } else if y < dy && keypad[dy].chars().collect::<Vec<char>>()[x] != '#' {
-                        y += 1;
-                        sequence += "v";
-                    } else if y > dy && keypad[dy].chars().collect::<Vec<char>>()[x] != '#'{
-                        y -= 1;
-                        sequence += "^";
-                    }                
-                }
-            }
-
-            sequence += "A";
-            pos = (x, y);
+            }            
         }
-        println!("{sequence}");
 
-        let line = sequence;
-        let keypad = vec!("#####", "##^A#", "#<v>#", "#####");
-        let mut pos = (3, 1);
+        // for sequence in &sequences_step1 {
+        //     println!("A {:?}", sequence);
+        // }
 
-        let mut sequence = String::new();
-        for c in line.chars() {
-            //println!("searching for {c}");
-            let dest = keypad.iter().enumerate().find_map(|(y, row)| row.find(c).and_then(|x| Some((x, y))));
-            let (dx, dy) = dest.unwrap();
-            //println!("{dx} {dy}");
-            let (mut x, mut y) = pos;
-            if keypad[y].chars().collect::<Vec<char>>()[dx] == '#' {
-                while x != dx || y != dy {
-                    if y < dy && keypad[dy].chars().collect::<Vec<char>>()[x] != '#' {
-                        y += 1;
-                        sequence += "v";
-                    } else if y > dy && keypad[dy].chars().collect::<Vec<char>>()[x] != '#'{
-                        y -= 1;
-                        sequence += "^";
-                    } else if x > dx && keypad[y].chars().collect::<Vec<char>>()[dx] != '#' {
-                        x -= 1;
-                        sequence += "<";
-                    } else if x < dx && keypad[y].chars().collect::<Vec<char>>()[dx] != '#' {
-                        x += 1;
-                        sequence += ">";
+        println!("BEFORE: {}", sequences_step1.len());
+        let mut seen = HashSet::new();
+        sequences_step1.retain(|(_pos, x)| seen.insert(x.to_string()));
+        println!("AFTER: {}", sequences_step1.len());
+
+
+        let keypad_old = vec!("#####", "##^A#", "#<v>#", "#####");
+        let keypad = keypad_old.iter().map(|s| s.chars().collect::<Vec<char>>()).collect::<Vec<_>>();
+        let start_pos = (3, 1);
+
+        let mut sequences_step2 = Vec::new();  
+
+        for previous_sequence_data in sequences_step1 {
+            let (_start_pos, previous_sequence) = previous_sequence_data;
+            let mut sequences = Vec::new();
+            sequences.push((start_pos, "".to_string()));
+    
+            let line = previous_sequence;
+
+            for c in line.chars() {
+                //println!("searching for {c}");
+                let end_pos = keypad_old.iter().enumerate().find_map(|(y, row)| row.find(c).and_then(|x| Some((x, y)))).unwrap();
+                let (ex, ey) = end_pos;
+                //println!("{ex} {ey}");
+                //let (sx, sy) = start_pos;
+    
+                let mut todo = Vec::new();
+                for sss in sequences.clone() {
+                    todo.push(sss);
+                }
+                sequences.clear();
+    
+                while !todo.is_empty() {
+                    let ((x, y), sequence_so_far) = todo.pop().unwrap();
+    
+                    let more = search(keypad.clone(), (x, y), (ex, ey), sequence_so_far);
+                    for (pos, sequence) in more {
+                        if pos == end_pos {
+                            sequences.push((pos, sequence.clone() + "A"));
+                            //println!("{:?} {}", pos, sequence.clone() + "A");
+                        } else {
+                            todo.push((pos, sequence));
+                        }
                     }
-                }
-            } else {
-                while x != dx || y != dy {
-                    if x > dx && keypad[y].chars().collect::<Vec<char>>()[dx] != '#' {
-                        x -= 1;
-                        sequence += "<";
-                    } else if x < dx && keypad[y].chars().collect::<Vec<char>>()[dx] != '#' {
-                        x += 1;
-                        sequence += ">";
-                    } else if y < dy && keypad[dy].chars().collect::<Vec<char>>()[x] != '#' {
-                        y += 1;
-                        sequence += "v";
-                    } else if y > dy && keypad[dy].chars().collect::<Vec<char>>()[x] != '#'{
-                        y -= 1;
-                        sequence += "^";
-                    }                
-                }
+                }            
             }
-            sequence += "A";
-            pos = (x, y);
+            for sequence in sequences {
+                sequences_step2.push(sequence);
+            }
         }
-        println!("{sequence}");
 
-        let line = sequence;
-        let keypad = vec!("#####", "##^A#", "#<v>#", "#####");
-        let mut pos = (3, 1);
+        // for sequence in &sequences_step2 {
+        //     println!("B {:?}", sequence);
+        // }
 
-        let mut sequence = String::new();
-        for c in line.chars() {
-            //println!("searching for {c}");
-            let dest = keypad.iter().enumerate().find_map(|(y, row)| row.find(c).and_then(|x| Some((x, y))));
-            let (dx, dy) = dest.unwrap();
-            //println!("{dx} {dy}");
-            let (mut x, mut y) = pos;
-            if keypad[y].chars().collect::<Vec<char>>()[dx] == '#' {
-                while x != dx || y != dy {
-                    if y < dy && keypad[dy].chars().collect::<Vec<char>>()[x] != '#' {
-                        y += 1;
-                        sequence += "v";
-                    } else if y > dy && keypad[dy].chars().collect::<Vec<char>>()[x] != '#'{
-                        y -= 1;
-                        sequence += "^";
-                    } else if x > dx && keypad[y].chars().collect::<Vec<char>>()[dx] != '#' {
-                        x -= 1;
-                        sequence += "<";
-                    } else if x < dx && keypad[y].chars().collect::<Vec<char>>()[dx] != '#' {
-                        x += 1;
-                        sequence += ">";
+        println!("BEFORE: {}", sequences_step2.len());
+        let mut seen = HashSet::new();
+        sequences_step2.retain(|(_pos, x)| seen.insert(x.to_string()));
+        println!("AFTER: {}", sequences_step2.len());
+
+        let keypad_old = vec!("#####", "##^A#", "#<v>#", "#####");
+        let keypad = keypad_old.iter().map(|s| s.chars().collect::<Vec<char>>()).collect::<Vec<_>>();
+        let start_pos = (3, 1);
+
+        let mut sequences_step3 = Vec::new();  
+
+        for previous_sequence_data in sequences_step2 {
+            let (_start_pos, previous_sequence) = previous_sequence_data;
+            let mut sequences = Vec::new();
+            sequences.push((start_pos, "".to_string()));
+    
+            let line = previous_sequence;
+
+            for c in line.chars() {
+                //println!("searching for {c}");
+                let end_pos = keypad_old.iter().enumerate().find_map(|(y, row)| row.find(c).and_then(|x| Some((x, y)))).unwrap();
+                let (ex, ey) = end_pos;
+                //println!("{ex} {ey}");
+                //let (sx, sy) = start_pos;
+    
+                let mut todo = Vec::new();
+                for sss in sequences.clone() {
+                    todo.push(sss);
+                }
+                sequences.clear();
+    
+                while !todo.is_empty() {
+                    let ((x, y), sequence_so_far) = todo.pop().unwrap();
+    
+                    let more = search(keypad.clone(), (x, y), (ex, ey), sequence_so_far);
+                    for (pos, sequence) in more {
+                        if pos == end_pos {
+                            sequences.push((pos, sequence.clone() + "A"));
+                            //println!("{:?} {}", pos, sequence.clone() + "A");
+                        } else {
+                            todo.push((pos, sequence));
+                        }
                     }
-                }
-            } else {
-                while x != dx || y != dy {
-                    if x > dx && keypad[y].chars().collect::<Vec<char>>()[dx] != '#' {
-                        x -= 1;
-                        sequence += "<";
-                    } else if x < dx && keypad[y].chars().collect::<Vec<char>>()[dx] != '#' {
-                        x += 1;
-                        sequence += ">";
-                    } else if y < dy && keypad[dy].chars().collect::<Vec<char>>()[x] != '#' {
-                        y += 1;
-                        sequence += "v";
-                    } else if y > dy && keypad[dy].chars().collect::<Vec<char>>()[x] != '#'{
-                        y -= 1;
-                        sequence += "^";
-                    }                
-                }
+                }            
             }
-            sequence += "A";
-            pos = (x, y);
+            for sequence in sequences {
+                sequences_step3.push(sequence);
+            }
         }
-        println!("{sequence}");
+        // for sequence in &sequences_step3 {
+        //     println!("C {:?}", sequence);
+        // }
 
-        let numbers_only = numbers_only.collect::<String>().parse::<usize>().unwrap();
-        subtotal = sequence.len() * numbers_only;
+        let mult = numbers_only.collect::<String>().parse::<u64>().unwrap();
+        let lengths = sequences_step3.iter().map(|(_pos, sequence)| sequence.len());
+        let subtotal = mult * (lengths.min().unwrap() as u64);
 
-        println!("{} * {} = {} ", sequence.len(), numbers_only, subtotal);
-
-        // number of ways we can make this pattern is stored in the last position (if zero, i.e. a failure, add it on anyway)
+        println!("SUBTOTAL: {subtotal}");
         total += subtotal;
     }
 
@@ -217,3 +218,4 @@ fn main() {
 
 
 // 143536 too high
+// 136780 hooray
